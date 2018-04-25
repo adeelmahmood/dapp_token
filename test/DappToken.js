@@ -62,7 +62,7 @@ contract('DappToken', function(accounts) {
         ;
     });
 
-    it("delagated transfer", function() {
+    it("handles approval of delegated transfer", function() {
         var tokenInstance;
 
         return DappToken.deployed().then(function(i) {
@@ -81,5 +81,32 @@ contract('DappToken', function(accounts) {
         .then(function(allowance) {
             assert.equal(allowance.toNumber(), 100, "allowance was set")
         });
+    });
+
+    it("handles delegated transfer", function() {
+        var tokenInstance;
+
+        return DappToken.deployed().then(function(i) {
+            tokenInstance = i;
+            fromAccount = accounts[2];
+            toAccount = accounts[3];
+            spendingAccount = accounts[4];
+            return tokenInstance.transfer(fromAccount, 100, { from: accounts[0] });
+        })
+        .then(function(receipt) {
+            return tokenInstance.approve(spendingAccount, 10, { from: fromAccount });
+        })
+        .then(function(receipt) {
+            return tokenInstance.transferFrom.call(fromAccount, toAccount, 9999, { from: spendingAccount });
+        })
+        .then(assert.fail).catch(function(err) {
+            assert(error.message.indexOf("revert") >= 0, "error message must contain revert");
+            return tokenInstance.transferFrom.call(fromAccount, toAccount, 20, { from: spendingAccount });
+        })
+        .then(assert.fail).catch(function(err) {
+            assert(error.message.indexOf("revert") >= 0, "error message must contain revert");
+            // return tokenInstance.transferFrom(fromAccount, toAccount, 5, { from: spendingAccount });
+        })
+        ;
     });
 });
