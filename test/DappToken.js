@@ -99,13 +99,33 @@ contract('DappToken', function(accounts) {
         .then(function(receipt) {
             return tokenInstance.transferFrom.call(fromAccount, toAccount, 9999, { from: spendingAccount });
         })
-        .then(assert.fail).catch(function(err) {
-            assert(error.message.indexOf("revert") >= 0, "error message must contain revert");
-            return tokenInstance.transferFrom.call(fromAccount, toAccount, 20, { from: spendingAccount });
+        .then(assert.fail).catch(function(error) {
+            assert(error.message.indexOf("revert") >= 0, 'error message must contain revert');
+            return tokenInstance.transferFrom(fromAccount, toAccount, 20, { from: spendingAccount });
         })
-        .then(assert.fail).catch(function(err) {
+        .then(assert.fail).catch(function(error) {
             assert(error.message.indexOf("revert") >= 0, "error message must contain revert");
-            // return tokenInstance.transferFrom(fromAccount, toAccount, 5, { from: spendingAccount });
+            return tokenInstance.transferFrom.call(fromAccount, toAccount, 10, { from: spendingAccount });
+        })
+        .then(function(success) {
+            assert.equal(success, true, "returns success");
+            return tokenInstance.transferFrom(fromAccount, toAccount, 10, { from: spendingAccount });
+        })
+        .then(function(receipt) {
+            assert.equal(receipt.logs.length, 1, "triggers one event");
+            assert.equal(receipt.logs[0].event, "Transfer", "triggers transfer event");
+            return tokenInstance.balanceOf(fromAccount);
+        })
+        .then(function(balance) {
+            assert.equal(balance.toNumber(), 90, "deducts from sender");
+            return tokenInstance.balanceOf(toAccount);
+        })
+        .then(function(balance) {
+            assert.equal(balance.toNumber(), 10, "adds to the receiver");
+            return tokenInstance.allowance(fromAccount, spendingAccount);
+        })
+        .then(function(allowance) {
+            assert.equal(allowance.toNumber(), 0, "deducts from allowance");
         })
         ;
     });
