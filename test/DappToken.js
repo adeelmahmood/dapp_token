@@ -61,4 +61,25 @@ contract('DappToken', function(accounts) {
         })
         ;
     });
+
+    it("delagated transfer", function() {
+        var tokenInstance;
+
+        return DappToken.deployed().then(function(i) {
+            tokenInstance = i;
+            return tokenInstance.approve.call(accounts[1], 100, { from: accounts[0] });
+        })
+        .then(function(success) {
+            assert.equal(success, true, "returns success");
+            return tokenInstance.approve(accounts[1], 100, { from: accounts[0] });
+        })
+        .then(function(receipt) {
+            assert.equal(receipt.logs.length, 1, "triggers one event");
+            assert.equal(receipt.logs[0].event, "Approval", "triggers transfer event");
+            return tokenInstance.allowance(accounts[0], accounts[1]);
+        })
+        .then(function(allowance) {
+            assert.equal(allowance.toNumber(), 100, "allowance was set")
+        });
+    });
 });
